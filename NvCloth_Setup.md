@@ -34,7 +34,7 @@ meshDesc.points.count = vertexCount;
 //meshDesc.triangels,meshDesc.invMasses
 //etc. for quads, triangles and invMasses
 
-//UE4 创建四边面，nvcloth对四边面更好 
+//UE4 创建四边面，nvcloth对四边面更好
 FClothingSystemRuntimeModule& ClothingModule = FModuleManager::Get().LoadModuleChecked<FClothingSystemRuntimeModule>("ClothingSystemRuntime");
 nv::cloth::CLothMeshQuadifier* Quadifier = ClothingModule.GetQuadifier();
 Quadifier->quadify(meshDesc);
