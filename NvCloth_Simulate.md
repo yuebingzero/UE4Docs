@@ -71,14 +71,18 @@ mSimulatedCloths[id].Destroy();
     - **solvFabric()** （TODO）  
     - **constrainSeparation()**  对应Backstop Offset和Backstop Radius  
     该方法和constrainMotion()原理一直，只是将顶点限制在约束球以外的范围。
-    - **SwCollision()** （TODO）  
+    - **SwCollision()**   
     `collideConvexes(state)`  
     `collideTriangles(state)`  
     3)计算每一帧的顶点包围盒  
     4)生成球形、胶囊体形碰撞范围。（球形会进行插值，**代码中胶囊体支持两边的球形半径不一样**）  
     5)`buildAcceleration()`先确定所有球形组成的包围盒和顶点包围盒，如果需要CCD（连续碰撞），则包围盒由当前球形、顶点和上一帧球形、顶点共同确定。然后确定球形包围盒和顶点包围盒的重叠部分，修正一下重叠部分的数字误差。将重叠包围盒按x，y，z三个方向各划分8个格子，用一个32bits的mask标记某个球形是否在格子中（此处限制了球形最多支持32个），每个球形有两个first和last标记，first标记记录了某坐标轴该球最小的格子到第7个格子，last标记了某坐标轴该球最大的格子到第0个格子。对于球0，球0所占的格子就是从first[0]到last[0]。对于球0和球1组成的胶囊体，所占格子就是两个球的并集。  
-    6)计算碰撞， **每四个连续顶点** 计算。  
-    先计算胶囊体碰撞
+    6)计算碰撞， **每四个连续顶点** 计算。（TODO）  
+    先计算胶囊体碰撞  
+    然后计算剔除胶囊体球形的球形碰撞  
+    预计算摩擦力相关  
+    7)计算摩擦力  
+    8)计算碰撞质量变换
     - **SelfCollision()**  实质是点对点的碰撞，效果一般，总的来说所有的在intergrateParticles()后的方法都是补偿，如果intergrateParticles()已经模拟到了一个错误位置，但是在SelfCollision()看来是正确的没有碰撞的位置（是有可能的），那就无法起到碰撞的作用，想有些提问说的，急需点和面的碰撞。  
     创建数据，理论上可以自定义顶点SelfConllisionIndices（实际是一个Vertex表）。UE4创建selfCollision数据时，剔除了MaxDistance非常小的点，剔除了两点间的距离小于SelfCollisionRadius的其中一个点。
     将布料的包围盒（AABB的）沿各个轴进行网格划分，最长轴划分为65533，其他划分为253个格子。将每个顶点分配到每个格子中，格子的坐标index作为顶点的key（低16位为最长周格子id，其他各8bits为其他格子id），将key进行基数排序（O(n+4\*256)，n是参与selfcollision的顶点数），从小到大。假设从最长轴依次的坐标轴顺序是i，j，k，i对应低16bits，j对应17~24bits，k对应25~32bits。排序之后，可以知道k轴的格子序号是从低到高排列的。按排序后的循序依次搜索顶点附近的格子，共搜索5次。假设Nc是最长轴方向CollisionDistance/GridSize+**2**，也就是最长轴方向碰撞距离跨越的格子数量。假设I，J，K是i，j，k轴的格子序号，[K,J,I]组成了32bits的key值。第一次搜索是[K,J,I]到[K,J,I+Nc]的格子。后四次搜索为[K,J+1,I-Nc]到[K,J+1,I+Nc]，[K+1,J-1,I-Nc]到[K+1,J-1,I+Nc]，[K+1,J,I-Nc]到[K+1,J,I+Nc]，[K+1,J+1,I-Nc]到[K+1,J+1,I+Nc]（搜索的方式，先找到大于[K+1,J+1,I-Nc]的第一个点，记为kFirst，然后找到大于[K+1,J+1,I-Nc]的第一个点，记为kLast，kFirst和kLast之间的点就是搜索到的点，\*不包括kLast，kFirst=kLast的情况就是一个点都没有）。将当前顶点与这5次搜索的顶点做碰撞检测，最坏是O(n^2)，大部分情况是O(m\*n)。
@@ -86,7 +90,7 @@ mSimulatedCloths[id].Destroy();
     ```
     pos0 = pos0 + w0/(w0+w1) * (delta*(1-|r|/|delta|))
     pos1 = pos1 - w1/(w0+w1) * (delta*(1-|r|/|delta|))
-    //其中 w0 w1是两定点的质量，r是碰撞距离CollisionDistance
+    //其中 w0 w1是两定点的质量倒数，r是碰撞距离CollisionDistance
     ```
     - **updateSleepState()** （TODO）  
     - **mState.Upate()** 更新旋转导致的初始偏移的旋转，剩余迭代次数减一  
