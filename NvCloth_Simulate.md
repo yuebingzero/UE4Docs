@@ -14,7 +14,7 @@ if(Solver->beginSimulation(DeltaTime))
 }
 ```
 ## > beginSimulation(DeltaTime)
-1. 传入deltaTime 每一帧的tick时间，对于时间很长的帧，deltaTime会舍入到MaxPhysicsDeltaTime，默认是1/30s。
+1. 传入deltaTime 每一帧的tick时间，对于时间很长的帧，deltaTime会舍入到MaxPhysicsDeltaTime，默认是1/30s。也就是帧率低于30，布料运算会变慢。
 2. beginFrame() Profile做了一个标记
 
 ## > simulateChunk(id)
@@ -50,7 +50,7 @@ mSimulatedCloths[id].Destroy();
 		mState.update();//更新剩余模拟次数
 	}
     ```
-    - **intergrateParticles()**  
+    - **intergrateParticles()**  （TODO Local Space Simulate）
     积分方法计算布料各顶点位置。如果pos->w == 0.0f，也就是无限质量，那么当前顶点位置保持不变。  
     x_next = x_cur + (x_cur - x_prev) \* dt_cur/dt_prev \* damping + g\*dt\*dt  
     如果正在旋转的话（isTurning）（TODO）  
@@ -65,12 +65,12 @@ mSimulatedCloths[id].Destroy();
 	Simd4f radius = max(gSimd4fZero, deltaW * scale + bias);
 	Simd4f slack = gSimd4fOne - radius * rsqrt(sqrLength);
     ```  
-    只要slack有大于0的，所有4个顶点都会在当前位置补偿delta[i]\*slack的位移。  
+    slack大于0的，会在当前位置补偿delta[i]\*slack的位移。  
     - **constrainTether()**  
     每个顶点会有一个或多个固（MaxDistance为0）的顶点作为Anchor（锚），顶点到Anchor之间的距离会被提前记录，当顶点当前位置到Anchor位置的距离超出记录的数值，会将差值减去。如何创建每个顶点的Anchor数据，参看createTetherData()。（TODO）  
     - **solvFabric()** （TODO）  
     - **constrainSeparation()**  对应Backstop Offset和Backstop Radius  
-    该方法和constrainMotion()原理一直，只是将顶点限制在约束球以外的范围。
+    该方法和constrainMotion()原理一致，只是将顶点限制在约束球以外的范围。
     - **SwCollision()**   
     `collideConvexes(state)`  
     `collideTriangles(state)`  
