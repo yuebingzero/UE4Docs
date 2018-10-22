@@ -68,12 +68,79 @@ Weak Pointer的引用不会阻止object的释放。Weak Pointer会自动置为�
 
 ## Actor
 ### Spawn Actor
+主要通过`UWorld::SpawnActor()`创建一个Actor的实例，并返回指针
 ### Components  
 actor相当于包含多个components的容器  
 actor的Transfrom取决于 root component  
 ### Ticking
+#### Tick Group
+tick group决定什么时间进行tick，最主要的就是physics simulation。Group主要分为物理前，物理中，物理后（=。=）。
+#### Tick Dependency
+通过`AddTickPrerequisiteActor `和`AddTickPrerequisiteComponent `设置相应的Actor或Component，只有在对应的Actor或者Component的tick结束后，当前的Actor才会进行tick。
 ### LifeCycle
 ![ActorLifeCycleImg](image/ActorLifeCycle1.jpg)  
 
 ### Destroy
 actor并不会自动垃圾回收，需要调用Destroy()函数
+
+## Delegates机制
+先mark
+## UPROPERTY
+- Meta = (Bitmask)  
+将整数声明为bitmask，通过下来菜单选择Flag1，Flag2等等  
+如果想要自定义flag名称，我们需要创建一个UENUM，包含bitflags meta属性
+```
+UENUM(Meta = (Bitflags))
+enum class EColorBits
+{
+    ECB_Red,
+    ECB_Green,
+    ECB_Blue
+};
+```  
+然后
+```
+UPROPERTY(EditAnywhere, Meta = (Bitmask, BitmaskEnum = "EColorBits"))
+int32 ColorFlags;
+```
+- boolean Type
+有两种形式
+```
+uint32 bIsHungry : 1;
+bool bIsThirsty;
+```
+- string类型
+UE4支持3中字符串形式，FString是一个动态char数组，可以动态修改，FName是不可变的创建在全局字符串表的字符串，内存更小，更高效，FText是一个更鲁棒的字符串主要处理用户定义数据字符。
+TEXT()宏可以用来处理TCHAR的类型转换
+
+- Properties
+参考[link](https://docs.unrealengine.com/latest/INT/Programming/UnrealArchitecture/Reference/Properties/index.html)。
+
+## TArray
+Arr.Add();  
+Arr.Emplace();  
+Add将参数拷贝一份作为Instance，也就是创建一个空的instance，然后将参数拷贝（默认构造函数+拷贝）（Push和Add用途完全一致）  
+Emplace直接利用参数创建一个instance（带参数的构造函数）  
+通常情况下，Emplace比Add要好，能够避免创建不必要的临时变量。不重要的例如int32用Add，非平凡的如FString用Emplace  
+
+**Append** 允许在array后添加多个元素，从另外一个array中。  
+- **迭代**  
+推荐使用C++'s ranged-for的特性
+```
+FString JoinedStr;
+for (auto& Str : StrArr)
+{
+    JoinedStr += Str;
+    JoinedStr += TEXT(" ");
+}
+```
+也可以用数组的index进行访问，也可以使用Array的迭代器类型。  
+- **排序**  
+Sort(), HeapSort()根据数据量、需求进行选择，两者都是不稳定排序，Sort()也可以自定义比较函数。  
+StableSort()稳定排序  
+- **query 查询 精确的信息检索**  
+GetData()返回指针，如果const数组，则返回const指针  
+[]返回引用，如果const数组，则返回const引用  
+Last() Top() Last(1)，从尾部的检索，Top和Last一样，Last额外可以加index参数  
+bool bIsTrue = Contains()检索数组是否包含某元素  
+int Index = Find()  
