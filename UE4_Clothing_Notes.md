@@ -12,4 +12,6 @@ UE会提示 can not find bind pose（warning）
 6. 记住Ignore Backfacing和ignore Unpainted Regions的作用，方便美术操作。提醒美术灵活运用scale、add来刷数值。
 7. 双层布料，布线问题，内外线能对应上？内外层留足够的距离。
 8. 布料布线尽量垂直向下   
-9. 布料起跑阶段，猛然弹起，是动画融合时间太短
+9. 布料起跑阶段，猛然弹起，是动画融合时间太短  
+10. 传入deltaTime 每一帧的tick时间，如果超过MaxPhysicsDeltaTime * ClothMultiplier ，那么将EClothingTeleportMode设为 Teleport;
+11. SpwanActor，如果生成布料，主要在SpwanActor时传入位置，finishspawn里面createActor。从0位置到actor位置会有一帧拉扯出现，强制reset也不管用。
